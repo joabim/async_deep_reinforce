@@ -16,20 +16,22 @@ from constants import RMSP_ALPHA
 from constants import GRAD_NORM_CLIP
 from constants import USE_GPU
 
+
 def choose_action(pi_values):
-  values = []
-  sum = 0.0
-  for rate in pi_values:
-    sum = sum + rate
-    value = sum
-    values.append(value)
-    
-  r = random.random() * sum
-  for i in range(len(values)):
-    if values[i] >= r:
-      return i;
-  #fail safe
-  return len(values)-1
+    values = []
+    sum = 0.0
+    for rate in pi_values:
+        sum = sum + rate
+        value = sum
+        values.append(value)
+
+    r = random.random() * sum
+    for i in range(len(values)):
+        if values[i] >= r:
+            return i;
+    # fail safe
+    return len(values) - 1
+
 
 # use CPU for display tool
 device = "/cpu:0"
@@ -38,21 +40,21 @@ global_network = GameACNetwork(ACTION_SIZE, device)
 
 learning_rate_input = tf.placeholder("float")
 
-grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
-                              decay = RMSP_ALPHA,
-                              momentum = 0.0,
-                              epsilon = RMSP_EPSILON,
-                              clip_norm = GRAD_NORM_CLIP,
-                              device = device)
+grad_applier = RMSPropApplier(learning_rate=learning_rate_input,
+                              decay=RMSP_ALPHA,
+                              momentum=0.0,
+                              epsilon=RMSP_EPSILON,
+                              clip_norm=GRAD_NORM_CLIP,
+                              device=device)
 
 training_threads = []
 for i in range(PARALLEL_SIZE):
-  training_thread = A3CTrainingThread(i, global_network, 1.0,
-                                      learning_rate_input,
-                                      grad_applier,
-                                      8000000,
-                                      device = device)
-  training_threads.append(training_thread)
+    training_thread = A3CTrainingThread(i, global_network, 1.0,
+                                        learning_rate_input,
+                                        grad_applier,
+                                        8000000,
+                                        device=device)
+    training_threads.append(training_thread)
 
 sess = tf.Session()
 init = tf.initialize_all_variables()
@@ -61,18 +63,17 @@ sess.run(init)
 saver = tf.train.Saver()
 checkpoint = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
 if checkpoint and checkpoint.model_checkpoint_path:
-  saver.restore(sess, checkpoint.model_checkpoint_path)
-  print "checkpoint loaded:", checkpoint.model_checkpoint_path
+    saver.restore(sess, checkpoint.model_checkpoint_path)
+    print("checkpoint loaded:", checkpoint.model_checkpoint_path)
 else:
-  print "Could not find old checkpoint"
+    print("Could not find old checkpoint")
 
 game_state = GameState(0, display=True, no_op_max=0)
 
 while True:
-  pi_values = global_network.run_policy(sess, game_state.s_t)
+    pi_values = global_network.run_policy(sess, game_state.s_t)
 
-  action = choose_action(pi_values)
-  game_state.process(action)
+    action = choose_action(pi_values)
+    game_state.process(action)
 
-  game_state.update()
-
+    game_state.update()
